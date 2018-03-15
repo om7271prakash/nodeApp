@@ -21,18 +21,57 @@ app.use(sessions({
 app.use('/cssFiles', express.static(__dirname + '/assets'));
 
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost/test');
+mongoose.connect('mongodb://localhost/test_db');
 
 app.get('/', (req, resp) => {
-  resp.sendFile('index.html', {root: path.join(__dirname, './files')});
+  session = req.session;
+  if(session.uniqueId){
+    resp.redirect('/redirects');
+  }else {
+    resp.sendFile('index.html', {root: path.join(__dirname, './files')});
+  }
 });
 
 app.get('/login', (req, resp) => {
-  resp.sendFile('login.html', {root: path.join(__dirname, '/files')});
+  session = req.session;
+  if(session.uniqueId){
+    resp.redirect('/redirects');
+  }else {
+    resp.sendFile('login.html', {root: path.join(__dirname, './files')});
+  }
 });
 
 app.get('/register', (req, resp) => {
-  resp.sendFile('register.html', {root: path.join(__dirname, '/files')});
+  session = req.session;
+  if(session.uniqueId){
+    resp.redirect('/redirects');
+  }else {
+    resp.sendFile('register.html', {root: path.join(__dirname, './files')});
+  }
+});
+
+app.get('/home', (req, resp) => {
+  session = req.session;
+  if(session.uniqueId){
+    resp.sendFile('home.html', {root: path.join(__dirname, '/files')});
+  }else{
+    resp.redirect('/');
+  }
+});
+
+app.get('/logout', (req, resp) => {
+  req.session.destroy();
+  resp.redirect('/');
+});
+
+app.get('/redirects', (req, resp) => {
+  session = req.session;
+  if(session.uniqueId){
+    console.log(session.uniqueId);
+    resp.redirect('/home');
+  }else{
+    resp.end('/');
+  }
 });
 
 app.post('/login', (req, resp) => {
@@ -40,16 +79,14 @@ app.post('/login', (req, resp) => {
     .exec()
     .then((user) => {
       if(user !== null ){
-        resp.json(user);
-      }else{
-        resp.send('No data found..');
+        session = req.session;
+        session.uniqueId = user._id;
       }
-
+      resp.redirect('/redirects');
     })
     .catch((err) => {
       resp.send('error occured');
     });
-
 });
 
 app.post('/register', (req, resp) => {
